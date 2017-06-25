@@ -77,7 +77,7 @@ def page_menu(context, token):
         # page.set_menu_helpers.
         context.dicts[0]["_parent_page_ids"] = {}
         pages = defaultdict(list)
-        for page in published.order_by("_order"):
+        for page in published.order_by("title"):
             page.set_helpers(context)
             context["_parent_page_ids"][page.id] = page.parent_id
             setattr(page, "num_children", num_children(page.id))
