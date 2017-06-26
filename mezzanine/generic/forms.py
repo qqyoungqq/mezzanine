@@ -4,7 +4,6 @@ from future.builtins import int, str, zip
 from django import forms
 from django_comments.forms import CommentSecurityForm, CommentForm
 from django_comments.signals import comment_was_posted
-from django.utils import six
 from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext, ugettext_lazy as _
 
@@ -12,7 +11,6 @@ from mezzanine.conf import settings
 from mezzanine.core.forms import Html5Mixin
 from mezzanine.generic.models import Keyword, ThreadedComment
 from mezzanine.utils.cache import add_cache_bypass
-from mezzanine.utils.deprecation import is_authenticated
 from mezzanine.utils.email import split_addresses, send_mail_template
 from mezzanine.utils.static import static_lazy as static
 from mezzanine.utils.views import ip_for_request
@@ -52,22 +50,13 @@ class KeywordsWidget(forms.MultiWidget):
         Takes the sequence of ``AssignedKeyword`` instances and splits
         them into lists of keyword IDs and titles each mapping to one
         of the form field widgets.
-        If the page has encountered a validation error then
-        Takes a string with ``Keyword`` ids and fetches the
-        sequence of ``AssignedKeyword``
         """
-        keywords = None
-
         if hasattr(value, "select_related"):
             keywords = [a.keyword for a in value.select_related("keyword")]
-        elif value and isinstance(value, six.string_types):
-            keyword_pks = value.split(",")
-            keywords = Keyword.objects.all().filter(id__in=keyword_pks)
-
-        if keywords:
-            keywords = [(str(k.id), k.title) for k in keywords]
-            self._ids, words = list(zip(*keywords))
-            return (",".join(self._ids), ", ".join(words))
+            if keywords:
+                keywords = [(str(k.id), k.title) for k in keywords]
+                self._ids, words = list(zip(*keywords))
+                return (",".join(self._ids), ", ".join(words))
         return ("", "")
 
     def format_output(self, rendered_widgets):
@@ -115,7 +104,7 @@ class ThreadedCommentForm(CommentForm, Html5Mixin):
         for field in ThreadedCommentForm.cookie_fields:
             cookie_name = ThreadedCommentForm.cookie_prefix + field
             value = request.COOKIES.get(cookie_name, "")
-            if not value and is_authenticated(user):
+            if not value and user.is_authenticated():
                 if field == "name":
                     value = user.get_full_name()
                     if not value and user.username != user.email:
@@ -145,7 +134,7 @@ class ThreadedCommentForm(CommentForm, Html5Mixin):
         """
         comment = self.get_comment_object()
         obj = comment.content_object
-        if is_authenticated(request.user):
+        if request.user.is_authenticated():
             comment.user = request.user
         comment.by_author = request.user == getattr(obj, "user", None)
         comment.ip_address = ip_for_request(request)
@@ -195,7 +184,7 @@ class RatingForm(CommentSecurityForm):
     def __init__(self, request, *args, **kwargs):
         self.request = request
         super(RatingForm, self).__init__(*args, **kwargs)
-        if request and is_authenticated(request.user):
+        if request and request.user.is_authenticated():
             current = self.rating_manager.filter(user=request.user).first()
             if current:
                 self.initial['value'] = current.value
@@ -215,7 +204,7 @@ class RatingForm(CommentSecurityForm):
         self.current = "%s.%s" % bits
         self.previous = request.COOKIES.get("mezzanine-rating", "").split(",")
         already_rated = self.current in self.previous
-        if already_rated and not is_authenticated(self.request.user):
+        if already_rated and not self.request.user.is_authenticated():
             raise forms.ValidationError(ugettext("Already rated."))
         return self.cleaned_data
 
@@ -229,7 +218,7 @@ class RatingForm(CommentSecurityForm):
         rating_value = self.cleaned_data["value"]
         manager = self.rating_manager
 
-        if is_authenticated(user):
+        if user.is_authenticated():
             rating_instance, created = manager.get_or_create(user=user,
                 defaults={'value': rating_value})
             if not created:

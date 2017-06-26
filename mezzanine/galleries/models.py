@@ -124,8 +124,7 @@ class Gallery(Page, RichText, BaseGallery):
 @python_2_unicode_compatible
 class GalleryImage(Orderable):
 
-    gallery = models.ForeignKey("Gallery", on_delete=models.CASCADE,
-        related_name="images")
+    gallery = models.ForeignKey("Gallery", related_name="images")
     file = FileField(_("File"), max_length=200, format="Image",
         upload_to=upload_to("galleries.GalleryImage.file", "galleries"))
     description = models.CharField(_("Description"), max_length=1000,

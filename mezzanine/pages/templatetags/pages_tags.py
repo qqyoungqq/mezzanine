@@ -4,7 +4,7 @@ from future.builtins import str
 from collections import defaultdict
 
 from django.core.exceptions import ImproperlyConfigured
-from django.template import TemplateSyntaxError, Variable
+from django.template import Context, TemplateSyntaxError, Variable
 from django.template.loader import get_template
 from django.utils.translation import ugettext_lazy as _
 
@@ -77,7 +77,7 @@ def page_menu(context, token):
         # page.set_menu_helpers.
         context.dicts[0]["_parent_page_ids"] = {}
         pages = defaultdict(list)
-        for page in published.order_by("title"):
+        for page in published.order_by("_order"):
             page.set_helpers(context)
             context["_parent_page_ids"][page.id] = page.parent_id
             setattr(page, "num_children", num_children(page.id))
@@ -131,7 +131,7 @@ def page_menu(context, token):
             context["page_branch_in_footer"] = True
 
     t = get_template(template_name)
-    return t.render(context.flatten())
+    return t.render(Context(context))
 
 
 @register.as_tag

@@ -25,7 +25,6 @@ from django.utils.translation import ugettext as _
 
 import mezzanine
 from mezzanine.conf import settings
-from mezzanine.utils.deprecation import is_authenticated
 from mezzanine.utils.importing import import_dotted_path
 from mezzanine.utils.sites import has_site_permission
 
@@ -42,7 +41,7 @@ def is_editable(obj, request):
     else:
         codename = get_permission_codename("change", obj._meta)
         perm = "%s.%s" % (obj._meta.app_label, codename)
-        return (is_authenticated(request.user) and
+        return (request.user.is_authenticated() and
                 has_site_permission(request.user) and
                 request.user.has_perm(perm))
 

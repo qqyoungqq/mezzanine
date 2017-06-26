@@ -33,17 +33,6 @@ from mezzanine.utils.urls import admin_url, slugify, unique_slug
 user_model_name = get_user_model_name()
 
 
-def wrapped_manager(klass):
-    if settings.USE_MODELTRANSLATION:
-        from modeltranslation.manager import MultilingualManager
-
-        class Mgr(MultilingualManager, klass):
-            pass
-        return Mgr()
-    else:
-        return klass()
-
-
 class SiteRelated(models.Model):
     """
     Abstract model for all things site-related. Adds a foreignkey to
@@ -52,13 +41,12 @@ class SiteRelated(models.Model):
     details.
     """
 
-    objects = wrapped_manager(CurrentSiteManager)
+    objects = CurrentSiteManager()
 
     class Meta:
         abstract = True
 
-    site = models.ForeignKey("sites.Site", on_delete=models.CASCADE,
-        editable=False)
+    site = models.ForeignKey("sites.Site", editable=False)
 
     def save(self, update_site=False, *args, **kwargs):
         """
@@ -79,7 +67,7 @@ class Slugged(SiteRelated):
     """
 
     title = models.CharField(_("Title"), max_length=500)
-    slug = models.CharField(_("URL"), max_length=2000, blank=True,
+    slug = models.CharField(_("URL"), max_length=2000, blank=True, null=True,
             help_text=_("Leave blank to have the URL auto-generated from "
                         "the title."))
 
@@ -248,7 +236,7 @@ class Displayable(Slugged, MetaData, TimeStamped):
     short_url = models.URLField(blank=True, null=True)
     in_sitemap = models.BooleanField(_("Show in sitemap"), default=True)
 
-    objects = wrapped_manager(DisplayableManager)
+    objects = DisplayableManager()
     search_fields = {"keywords": 10, "title": 5}
 
     class Meta:
@@ -497,8 +485,8 @@ class Ownable(models.Model):
     Abstract model that provides ownership of an object for a user.
     """
 
-    user = models.ForeignKey(user_model_name, on_delete=models.CASCADE,
-        verbose_name=_("Author"), related_name="%(class)ss")
+    user = models.ForeignKey(user_model_name, verbose_name=_("Author"),
+        related_name="%(class)ss")
 
     class Meta:
         abstract = True
@@ -567,8 +555,8 @@ class SitePermission(models.Model):
     access.
     """
 
-    user = models.OneToOneField(user_model_name, on_delete=models.CASCADE,
-        verbose_name=_("Author"), related_name="%(class)ss")
+    user = models.OneToOneField(user_model_name, verbose_name=_("Author"),
+        related_name="%(class)ss")
     sites = models.ManyToManyField("sites.Site", blank=True,
                                    verbose_name=_("Sites"))
 

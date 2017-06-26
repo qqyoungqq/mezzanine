@@ -4,7 +4,6 @@ from future.builtins import range
 from mezzanine.conf import settings
 from mezzanine.core.managers import DisplayableManager
 from mezzanine.utils.urls import home_slug
-from mezzanine.utils.deprecation import is_authenticated
 
 
 class PageManager(DisplayableManager):
@@ -23,7 +22,7 @@ class PageManager(DisplayableManager):
         ``PageMiddleware``.
         """
         published = super(PageManager, self).published(for_user=for_user)
-        unauthenticated = for_user and not is_authenticated(for_user)
+        unauthenticated = for_user and not for_user.is_authenticated()
         if (unauthenticated and not include_login_required and
                 not settings.PAGES_PUBLISHED_INCLUDE_LOGIN_REQUIRED):
             published = published.exclude(login_required=True)

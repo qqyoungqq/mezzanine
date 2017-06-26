@@ -3,7 +3,6 @@ from datetime import datetime
 
 from django.contrib.auth import get_user_model
 from django.db.models import Count, Q
-from django.utils import timezone
 
 from mezzanine.blog.forms import BlogPostForm
 from mezzanine.blog.models import BlogPost, BlogCategory
@@ -21,15 +20,13 @@ def blog_months(*args):
     Put a list of dates for blog posts into the template context.
     """
     dates = BlogPost.objects.published().values_list("publish_date", flat=True)
-    tz = timezone.get_current_timezone()
-    dates = [d.astimezone(tz) for d in dates]
     date_dicts = [{"date": datetime(d.year, d.month, 1)} for d in dates]
     month_dicts = []
     for date_dict in date_dicts:
         if date_dict not in month_dicts:
             month_dicts.append(date_dict)
-    for date_dict in month_dicts:
-        date_dict["post_count"] = date_dicts.count(date_dict)
+    for i, date_dict in enumerate(month_dicts):
+        month_dicts[i]["post_count"] = date_dicts.count(date_dict)
     return month_dicts
 
 
@@ -97,4 +94,4 @@ def quick_blog(context):
     Admin dashboard tag for the quick blog form.
     """
     context["form"] = BlogPostForm()
-    return context.flatten()
+    return context
